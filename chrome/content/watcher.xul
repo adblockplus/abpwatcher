@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is Adblock Plus Watcher.
+   -
+   - The Initial Developer of the Original Code is
+   - Wladimir Palant.
+   - Portions created by the Initial Developer are Copyright (C) 2008
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<!DOCTYPE dialog SYSTEM "chrome://abpwatcher/locale/watcher.dtd">
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://abpwatcher/skin/watcher.css" type="text/css"?>
+
+<dialog id="abpwatcher-watcher"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    title="&dialog.title;"
+    onload="init()"
+    onunload="destroy()"
+    ondialogextra2="treeView.clear()"
+    buttons="accept,extra2"
+    buttonlabelaccept="&accept.label;"
+    buttonaccesskeyaccept="&accept.accesskey;"
+    buttonlabelextra2="&clear.label;"
+    buttonaccesskeyextra2="&clear.accesskey;"
+    width="600px"
+    height="400px"
+    persist="screenX screenY width height sizemode advancedMode"
+    windowtype="abpwatcher:watch">
+
+  <script type="application/x-javascript;version=1.7" src="watcher.js"/>
+
+  <stringbundleset id="stringbundles">
+    <stringbundle id="stringbundle-global" src="chrome://abpwatcher/locale/global.properties"/>
+  </stringbundleset>
+
+  <popupset id="watcherPopups">
+    <tooltip id="tooltip" orient="vertical" onpopupshowing="return fillInTooltip(event)">
+      <grid>
+        <columns>
+          <column/>
+          <column flex="1"/>
+        </columns>
+        <rows id="tooltip-rows"/>
+      </grid>
+    </tooltip>
+  </popupset>
+
+  <description id="introduction">&introduction;</description>
+
+  <hbox align="center">
+    <checkbox id="ignore-early" label="&ignore-early.label;" accesskey="&ignore-early.accesskey;" persist="checked" oncommand="treeView.ignoreEarlyReturns = this.checked"/>
+    <spaced width="30"/>
+    <label control="filter" value="&filter.label;" accesskey="&filter.accesskey;"/>
+    <textbox flex="1" id="filter" type="timed" timeout="500" oncommand="treeView.filterString = this.value"/>
+  </hbox>
+
+  <tree id="list" flex="1" enableColumnDrag="true">
+    <treecols>
+      <treecol id="address" label="&address.column;" primary="true" flex="4" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="type" label="&type.column;" flex="0" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="result" label="&result.column;" flex="0" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="context" label="&context.column;" flex="1" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="document" label="&document.column;" hidden="true" flex="1" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="origin" label="&origin.column;" hidden="true" flex="2" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="additional" label="&additional.column;" hidden="true" flex="1" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="filter" label="&filter.column;" flex="1" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
+      <treecol id="time" label="&time.column;" hidden="true" flex="0" persist="width ordinal sortDirection hidden"/>
+    </treecols>
+
+    <treechildren tooltip="tooltip"/>
+  </tree>
+
+  <description id="summary" _template="&summary.text;"/>
+</dialog>
