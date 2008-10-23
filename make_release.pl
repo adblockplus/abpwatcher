@@ -32,10 +32,12 @@ for my $locale (@locales)
 }
 
 chdir('../..');
-system("cvs add downloads/abpwatcher-$version.xpi");
-system(qq(cvs commit -m "Releasing Adblock Plus Watcher $version"));
+system("hg add downloads/abpwatcher-$version.xpi");
+system(qq(hg commit -m "Releasing Adblock Plus Watcher $version"));
 
 my $branch = $version;
 $branch =~ s/\./_/g;
 $branch = "ABP_WATCHER_".$branch."_RELEASE";
-system(qq(cvs tag -R $branch src/abpwatcher"));
+system(qq(hg tag $branch"));
+
+system(qq(hg push"));
