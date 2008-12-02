@@ -45,7 +45,7 @@ function init()
 
   // Make sure the tree view has correct filters
   document.getElementById("ignore-early").doCommand();
-  document.getElementById("filter").doCommand();
+  document.getElementById("filterText").doCommand();
 
   abp.DataContainer.addListener(handleFilterHit);
   
