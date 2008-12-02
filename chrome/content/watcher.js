@@ -257,6 +257,8 @@ var treeView = {
   displayedItems: [],
   _ignoreEarlyReturns: false,
   _filterString: "",
+  _sortColumn: null,
+  _sortDirection: null,
   boxObject: null,
   atoms: {},
   observers: [],
@@ -303,6 +305,19 @@ var treeView = {
       atomStr = flag + "-false";
       this.atoms[atomStr] = atomService.getAtom(atomStr);
     }
+
+    // Check current sort direction
+    let cols = document.getElementsByTagName("treecol");
+    for (let i = 0; i < cols.length; i++)
+    {
+      let col = cols[i];
+      let dir = col.getAttribute("sortDirection");
+      if (dir && dir != "natural")
+      {
+        this._sortColumn = col.id;
+        this._sortDirection = dir;
+      }
+    }
   },
 
   get rowCount()
@@ -346,10 +361,39 @@ var treeView = {
 
   cycleHeader: function(col)
   {
+    col = col.element;
+
+    let cycle =
+    {
+      natural: 'ascending',
+      ascending: 'descending',
+      descending: 'natural'
+    };
+
+    let curDirection = "natural";
+    if (this._sortColumn == col.id)
+      curDirection = col.getAttribute("sortDirection");
+
+    if (this._sortColumn)
+      document.getElementById(this._sortColumn).removeAttribute("sortDirection");
+
+    curDirection = cycle[curDirection];
+    if (curDirection == "natural")
+    {
+      this._sortColumn = null;
+      this._sortDirection = null;
+    }
+    else
+    {
+      this._sortColumn = col.id;
+      this._sortDirection = curDirection;
+      col.setAttribute("sortDirection", this._sortDirection);
+    }
+    this.refilter();
   },
   isSorted: function()
   {
-    return false;
+    return (this._sortColumn != null);
   },
 
   isContainer: function() {return false},
@@ -414,13 +458,53 @@ var treeView = {
     return true;
   },
 
+  compare: function(entry1, entry2)
+  {
+    if (!this.isSorted())
+      return 0;
+
+    let value1 = entry1.cols[this._sortColumn];
+    let value2 = entry2.cols[this._sortColumn];
+    if (this._sortColumn == "time")
+    {
+      value1 = parseInt(value1) || 0;
+      value2 = parseInt(value2) || 0;
+    }
+    else
+    {
+      if (value1)
+        value1 = value1.toLowerCase();
+      else
+        value1 = "";
+      if (value2)
+        value2 = value2.toLowerCase();
+      else
+        value2 = "";
+    }
+
+    let result = 0;
+    if (value1 < value2)
+      result = -1;
+    else if (value1 > value2)
+      result = 1;
+
+    if (this._sortDirection == "descending")
+      result = -result;
+
+    return result;
+  },
+
   add: function(entry)
   {
     this.currentItems.push(entry);
     if (this.filter(entry))
     {
-      this.displayedItems.push(entry);
-      this.boxObject.rowCountChanged(this.displayedItems.length - 1, 1);
+      let pos = this.displayedItems.length;
+      if (this.isSorted())
+        for (pos = 0; pos < this.displayedItems.length && this.compare(this.displayedItems[pos], entry) <= 0; pos++);
+
+      this.displayedItems.splice(pos, 0, entry);
+      this.boxObject.rowCountChanged(pos, 1);
       this.notifyObservers("add", entry);
     }
   },
@@ -439,6 +523,13 @@ var treeView = {
   {
     let oldRows = this.rowCount;
     this.displayedItems = this.currentItems.filter(this.filter, this);
+    if (this.isSorted())
+    {
+      let me = this;
+      this.displayedItems.sort(function(){
+        return me.compare.apply(me, arguments);
+      });
+    }
     let newRows = this.rowCount;
 
     if (oldRows != newRows)
