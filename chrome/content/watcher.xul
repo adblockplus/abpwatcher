@@ -69,7 +69,7 @@
     <checkbox id="ignore-early" label="&ignore-early.label;" accesskey="&ignore-early.accesskey;" persist="checked" oncommand="treeView.ignoreEarlyReturns = this.checked"/>
     <spaced width="30"/>
     <label control="filter" value="&filter.label;" accesskey="&filter.accesskey;"/>
-    <textbox flex="1" id="filter" type="timed" timeout="500" oncommand="treeView.filterString = this.value"/>
+    <textbox flex="1" id="filterText" type="timed" timeout="500" oncommand="treeView.filterString = this.value"/>
   </hbox>
 
   <tree id="list" flex="1" enableColumnDrag="true">
