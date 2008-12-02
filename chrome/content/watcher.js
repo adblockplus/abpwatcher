@@ -95,7 +95,8 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
     currentData.context = node;
     currentData.window = wnd;
     currentData.internalType = contentType;
-    currentData.internalLocation = location;
+    if (location)
+        currentData.internalLocation = location.spec;
   }
   return origProcessNode.apply(this, arguments);
 }
