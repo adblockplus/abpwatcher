@@ -38,6 +38,6 @@ system(qq(hg commit -m "Releasing Adblock Plus Watcher $version"));
 my $branch = $version;
 $branch =~ s/\./_/g;
 $branch = "ABP_WATCHER_".$branch."_RELEASE";
-system(qq(hg tag $branch"));
+system(qq(hg tag $branch));
 
-system(qq(hg push"));
+system(qq(hg push));
