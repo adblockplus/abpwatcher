@@ -131,8 +131,8 @@ function processQueue()
       entry.cols.type = String(entry.type);
       try {
         // Nasty hack: try to get type name from ABP
-        if (entry.type in policy.__parent__.localizedDescr)
-          entry.cols.type = String(policy.__parent__.localizedDescr[entry.type]);
+        if (entry.type in policy.localizedDescr)
+          entry.cols.type = String(policy.localizedDescr[entry.type]);
       } catch(e) {}
     }
     entry.cols.result = stringBundle.getString(entry.result ? "decision.allow" : "decision.block");
@@ -153,8 +153,8 @@ function processQueue()
         let internalType = String(entry.internalType);
         try {
           // Nasty hack: try to get type name from ABP
-          if (entry.internalType in policy.__parent__.localizedDescr)
-            internalType = String(policy.__parent__.localizedDescr[entry.internalType]);
+          if (entry.internalType in policy.localizedDescr)
+            internalType = String(policy.localizedDescr[entry.internalType]);
         } catch(e) {}
         additional.push(stringBundle.getFormattedString("additional.typeChanged", [internalType]));
     }
