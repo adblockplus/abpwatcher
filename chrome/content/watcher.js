@@ -59,7 +59,7 @@ function replacementShouldLoad(contentType, contentLocation, requestOrigin, node
   let startTime = null;
   try
   {
-    currentData = {earlyReturn: true, filters: []};
+    currentData = {external: false, earlyReturn: true, filters: []};
     startTime = Date.now();
 
     if (contentLocation)
@@ -89,16 +89,53 @@ function replacementShouldLoad(contentType, contentLocation, requestOrigin, node
 
 function replacementProcessNode(wnd, node, contentType, location, collapse)
 {
-  if (currentData && !("context" in currentData))
+  let startTime = null;
+  try
   {
-    currentData.earlyReturn = false;
-    currentData.context = node;
-    currentData.window = wnd;
-    currentData.internalType = contentType;
-    if (location)
-        currentData.internalLocation = location.spec;
+    if (currentData && !("context" in currentData))
+    {
+      currentData.earlyReturn = false;
+      currentData.context = node;
+      currentData.window = wnd;
+      currentData.internalType = contentType;
+      if (location)
+          currentData.internalLocation = location.spec;
+    }
+    else
+    {
+      // shouldLoad wasn't called - this isn't being called by content policy
+      currentData = {
+        external: true,
+        earlyReturn: false,
+        filters: [],
+        location: location.spec,
+        internalLocation: location.spec,
+        context: node,
+        window: wnd,
+        type: contentType,
+        internalType: contentType
+      };
+      startTime = Date.now();
+    }
+  } catch(e) {}
+  
+  let ret;
+  try
+  {
+    ret = origProcessNode.apply(this, arguments);
+    return ret;
   }
-  return origProcessNode.apply(this, arguments);
+  finally
+  { 
+    if (startTime !== null)
+    {
+      currentData.processingTime = (Date.now() - startTime);
+      currentData.result = (ret == true);
+
+      processingQueue.push(currentData);
+      currentData = null;
+    }
+  }
 }
 
 function destroy()
