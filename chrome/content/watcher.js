@@ -104,12 +104,17 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
     else
     {
       // shouldLoad wasn't called - this isn't being called by content policy
+      if (location instanceof abp.Filter)
+        location = location.text;
+      else
+        location = location.spec;
+
       currentData = {
         external: true,
         earlyReturn: false,
         filters: [],
-        location: location.spec,
-        internalLocation: location.spec,
+        location: location,
+        internalLocation: location,
         context: node,
         window: wnd,
         type: contentType,
