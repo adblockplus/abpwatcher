@@ -59,7 +59,7 @@ function replacementShouldLoad(contentType, contentLocation, requestOrigin, node
   let startTime = null;
   try
   {
-    currentData = {external: false, earlyReturn: true, filters: []};
+    currentData = {internal: false, earlyReturn: true, filters: []};
     startTime = Date.now();
 
     if (contentLocation)
@@ -104,17 +104,14 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
     else
     {
       // shouldLoad wasn't called - this isn't being called by content policy
-      if (location instanceof abp.Filter)
-        location = location.text;
-      else
-        location = location.spec;
+      let locationString = (location instanceof abp.Filter ? location.text : location.spec);
 
       currentData = {
-        external: true,
+        internal: true,
         earlyReturn: false,
         filters: [],
-        location: location,
-        internalLocation: location,
+        location: locationString,
+        internalLocation: locationString,
         context: node,
         window: wnd,
         type: contentType,
@@ -190,18 +187,20 @@ function processQueue()
       entry.cols.time = String(entry.processingTime);
 
     let additional = [];
+    if (entry.internal)
+      additional.push(stringBundle.getString("additional.internalInvocation"));
     if (typeof entry.internalType != "undefined" && entry.type != entry.internalType)
     {
-        let internalType = String(entry.internalType);
-        try {
-          // Nasty hack: try to get type name from ABP
-          if (entry.internalType in policy.localizedDescr)
-            internalType = String(policy.localizedDescr[entry.internalType]);
-        } catch(e) {}
-        additional.push(stringBundle.getFormattedString("additional.typeChanged", [internalType]));
+      let internalType = String(entry.internalType);
+      try {
+        // Nasty hack: try to get type name from ABP
+        if (entry.internalType in policy.localizedDescr)
+          internalType = String(policy.localizedDescr[entry.internalType]);
+      } catch(e) {}
+      additional.push(stringBundle.getFormattedString("additional.typeChanged", [internalType]));
     }
     if (typeof entry.internalLocation != "undefined" && entry.location != entry.internalLocation)
-        additional.push(stringBundle.getFormattedString("additional.locationChanged", [String(entry.internalLocation)]));
+      additional.push(stringBundle.getFormattedString("additional.locationChanged", [String(entry.internalLocation)]));
 
     if (additional.length > 0)
       entry.cols.additional = additional.join(", ");
