@@ -546,6 +546,8 @@ var treeView = {
 
       this.displayedItems.splice(pos, 0, entry);
       this.boxObject.rowCountChanged(pos, 1);
+      if (pos == this.displayedItems.length - 1 && this.boxObject.getLastVisibleRow() == pos - 1)
+        this.boxObject.ensureRowIsVisible(pos);
       this.notifyObservers("add", entry);
     }
   },
