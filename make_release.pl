@@ -20,17 +20,6 @@ close(VERSION);
 @ARGV = ("../downloads/abpwatcher-$version.xpi");
 do './create_xpi.pl';
 
-opendir(LOCALES, "chrome/locale");
-my @locales = grep {!/[^\w\-]/ && !-e("chrome/locale/$_/.incomplete")} readdir(LOCALES);
-closedir(LOCALES);
-
-# Create new single-locale builds
-for my $locale (@locales)
-{
-  @ARGV = ("../downloads/abpwatcher-$version-$locale.xpi", $locale);
-  do './create_xpi.pl';
-}
-
 chdir('..');
 system("hg add downloads/abpwatcher-$version.xpi");
 system(qq(hg commit -m "Releasing Adblock Plus Watcher $version" downloads abpwatcher));
