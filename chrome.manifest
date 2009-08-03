@@ -1,6 +1,6 @@
 overlay   chrome://adblockplus/content/overlayGeneral.xul chrome://abpwatcher/content/overlay.xul
 overlay   chrome://adblockplus/content/ui/overlayGeneral.xul chrome://abpwatcher/content/overlay.xul
 content   abpwatcher jar:chrome/abpwatcher.jar!/content/
-skin      abpwatcher classic/1.0 jar:chrome/abpwatcher.jar!/skin/classic/
+skin      abpwatcher classic/1.0 jar:chrome/abpwatcher.jar!/skin/
 locale    abpwatcher {{LOCALE}} jar:chrome/abpwatcher.jar!/locale/{{LOCALE}}/
 
