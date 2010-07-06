@@ -4,3 +4,5 @@ content   abpwatcher jar:chrome/abpwatcher.jar!/content/
 skin      abpwatcher classic/1.0 jar:chrome/abpwatcher.jar!/skin/
 locale    abpwatcher {{LOCALE}} jar:chrome/abpwatcher.jar!/locale/{{LOCALE}}/
 
+# Hack to allow the icon to be accessed via chrome URL
+skin      abpwatcher-icon classic/1.0 ./
