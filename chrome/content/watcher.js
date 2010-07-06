@@ -22,11 +22,20 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var abp = Components.classes["@mozilla.org/adblockplus;1"].createInstance().wrappedJSObject;
-var policy = abp.policy;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cr = Components.results;
+const Cu = Components.utils;
 
-var origShouldLoad = policy.shouldLoad;
-var origProcessNode = policy.processNode;
+let baseURL = Cc["@adblockplus.org/abp/private;1"].getService(Ci.nsIURI);
+Cu.import(baseURL.spec + "Utils.jsm");
+Cu.import(baseURL.spec + "ContentPolicy.jsm");
+Cu.import(baseURL.spec + "RequestList.jsm");
+Cu.import(baseURL.spec + "FilterClasses.jsm");
+
+let PolicyPrivate = Cu.import(baseURL.spec + "ContentPolicy.jsm", null).PolicyPrivate;
+var origShouldLoad = PolicyPrivate.shouldLoad;
+var origProcessNode = Policy.processNode;
 
 var currentData = null;
 var processingQueue = [];
@@ -47,10 +56,10 @@ function init()
   document.getElementById("ignore-early").doCommand();
   document.getElementById("filterText").doCommand();
 
-  abp.DataContainer.addListener(handleFilterHit);
-  
-  policy.shouldLoad = replacementShouldLoad;
-  policy.processNode = replacementProcessNode;
+  RequestList.addListener(handleFilterHit);
+
+  PolicyPrivate.shouldLoad = replacementShouldLoad;
+  Policy.processNode = replacementProcessNode;
   setInterval(processQueue, 200);
 }
 
@@ -80,7 +89,7 @@ function replacementShouldLoad(contentType, contentLocation, requestOrigin, node
   {
     if (startTime !== null)
       currentData.processingTime = (Date.now() - startTime);
-    currentData.result = (ret == Components.interfaces.nsIContentPolicy.ACCEPT);
+    currentData.result = (ret == Ci.nsIContentPolicy.ACCEPT);
 
     processingQueue.push(currentData);
     currentData = null;
@@ -104,7 +113,7 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
     else
     {
       // shouldLoad wasn't called - this isn't being called by content policy
-      let locationString = (location instanceof abp.Filter ? location.text : location.spec);
+      let locationString = (location instanceof Filter ? location.text : location.spec);
 
       currentData = {
         internal: true,
@@ -119,7 +128,11 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
       };
       startTime = Date.now();
     }
-  } catch(e) {}
+  }
+  catch(e)
+  {
+    Cu.reportError(e);
+  }
   
   let ret;
   try
@@ -142,11 +155,11 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
 
 function destroy()
 {
-  abp.DataContainer.removeListener(handleFilterHit);
+  RequestList.removeListener(handleFilterHit);
   if (origShouldLoad)
-    policy.shouldLoad = origShouldLoad;
+    PolicyPrivate.shouldLoad = origShouldLoad;
   if (origProcessNode)
-    policy.processNode = origProcessNode;
+    Policy.processNode = origProcessNode;
 }
 
 function handleFilterHit(wnd, type, data, location)
@@ -170,8 +183,8 @@ function processQueue()
       entry.cols.type = String(entry.type);
       try {
         // Nasty hack: try to get type name from ABP
-        if (entry.type in policy.localizedDescr)
-          entry.cols.type = String(policy.localizedDescr[entry.type]);
+        if (entry.type in Policy.localizedDescr)
+          entry.cols.type = String(Policy.localizedDescr[entry.type]);
       } catch(e) {}
     }
     entry.cols.result = stringBundle.getString(entry.result ? "decision.allow" : "decision.block");
@@ -194,8 +207,8 @@ function processQueue()
       let internalType = String(entry.internalType);
       try {
         // Nasty hack: try to get type name from ABP
-        if (entry.internalType in policy.localizedDescr)
-          internalType = String(policy.localizedDescr[entry.internalType]);
+        if (entry.internalType in Policy.localizedDescr)
+          internalType = String(Policy.localizedDescr[entry.internalType]);
       } catch(e) {}
       additional.push(stringBundle.getFormattedString("additional.typeChanged", [internalType]));
     }
@@ -213,17 +226,17 @@ function processQueue()
 
 function getNodeLabel(node)
 {
-  if (node instanceof Components.interfaces.nsIDOMWindow)
+  if (node instanceof Ci.nsIDOMWindow)
     return stringBundle.getFormattedString("NodeLabel.window", [node.location.href]);
-  if (node instanceof Components.interfaces.nsIDOMDocument)
+  if (node instanceof Ci.nsIDOMDocument)
     return stringBundle.getFormattedString("NodeLabel.document", [node.URL]);
-  else if (node instanceof Components.interfaces.nsIDOMXULElement)
+  else if (node instanceof Ci.nsIDOMXULElement)
     return stringBundle.getFormattedString("NodeLabel.xulElement", [node.tagName]);
-  else if (node instanceof Components.interfaces.nsIDOMNSHTMLElement)
+  else if (node instanceof Ci.nsIDOMNSHTMLElement)
     return stringBundle.getFormattedString("NodeLabel.htmlElement", [node.tagName]);
-  else if (node instanceof Components.interfaces.nsIDOMSVGElement)
+  else if (node instanceof Ci.nsIDOMSVGElement)
     return stringBundle.getFormattedString("NodeLabel.svgElement", [node.tagName]);
-  else if (node instanceof Components.interfaces.nsIDOMElement)
+  else if (node instanceof Ci.nsIDOMElement)
     return stringBundle.getFormattedString("NodeLabel.element", [node.tagName]);
   else
     return stringBundle.getFormattedString("NodeLabel.unknown", [String(node)]);
@@ -309,10 +322,10 @@ var treeView = {
   //
 
   QueryInterface: function(uuid) {
-    if (!uuid.equals(Components.interfaces.nsISupports) &&
-        !uuid.equals(Components.interfaces.nsITreeView))
+    if (!uuid.equals(Ci.nsISupports) &&
+        !uuid.equals(Ci.nsITreeView))
     {
-      throw Components.results.NS_ERROR_NO_INTERFACE;
+      throw Cr.NS_ERROR_NO_INTERFACE;
     }
   
     return this;
@@ -331,8 +344,7 @@ var treeView = {
 
     this.boxObject = boxObject;
 
-    let atomService = Components.classes["@mozilla.org/atom-service;1"]
-                                .getService(Components.interfaces.nsIAtomService);
+    let atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
     for each (let col in ["address", "type", "result", "context", "document", "origin", "additional", "filter", "time"])
     {
       let atomStr = "col-" + col;
