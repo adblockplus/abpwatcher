@@ -30,7 +30,7 @@ const Cu = Components.utils;
 let baseURL = Cc["@adblockplus.org/abp/private;1"].getService(Ci.nsIURI);
 Cu.import(baseURL.spec + "Utils.jsm");
 Cu.import(baseURL.spec + "ContentPolicy.jsm");
-Cu.import(baseURL.spec + "RequestList.jsm");
+Cu.import(baseURL.spec + "RequestNotifier.jsm");
 Cu.import(baseURL.spec + "FilterClasses.jsm");
 
 let PolicyPrivate = Cu.import(baseURL.spec + "ContentPolicy.jsm", null).PolicyPrivate;
@@ -40,6 +40,7 @@ var origProcessNode = Policy.processNode;
 var currentData = null;
 var processingQueue = [];
 var stringBundle;
+var notifier = null;
 
 function init()
 {
@@ -56,7 +57,7 @@ function init()
   document.getElementById("ignore-early").doCommand();
   document.getElementById("filterText").doCommand();
 
-  RequestList.addListener(handleFilterHit);
+  notifier = new RequestNotifier(null, handleFilterHit);
 
   PolicyPrivate.shouldLoad = replacementShouldLoad;
   Policy.processNode = replacementProcessNode;
@@ -155,17 +156,18 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
 
 function destroy()
 {
-  RequestList.removeListener(handleFilterHit);
+  if (notifier)
+    notifier.shutdown();
   if (origShouldLoad)
     PolicyPrivate.shouldLoad = origShouldLoad;
   if (origProcessNode)
     Policy.processNode = origProcessNode;
 }
 
-function handleFilterHit(wnd, type, data, location)
+function handleFilterHit(wnd, node, data)
 {
-  if (type == "add" && location.filter && currentData)
-    currentData.filters.push(location.filter.text);
+  if (data.filter && currentData)
+    currentData.filters.push(data.filter.text);
 }
 
 function processQueue()
