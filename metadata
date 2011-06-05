@@ -13,7 +13,7 @@ default=http://adblockplus.org/en/abpwatcher
 
 [compat]
 firefox=3.5/7.0a1
-seamonkey=2.0/2.2a1pre
+seamonkey=2.0/2.4a1
 thunderbird=3.0/7.0a1
 songbird=1.9.0a/1.11.0a
 prism=1.0b1/1.0.*
