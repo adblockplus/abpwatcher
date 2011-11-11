@@ -234,7 +234,7 @@ function getNodeLabel(node)
     return stringBundle.getFormattedString("NodeLabel.document", [node.URL]);
   else if (node instanceof Ci.nsIDOMXULElement)
     return stringBundle.getFormattedString("NodeLabel.xulElement", [node.tagName]);
-  else if (node instanceof Ci.nsIDOMNSHTMLElement)
+  else if (node instanceof Ci.nsIDOMHTMLElement)
     return stringBundle.getFormattedString("NodeLabel.htmlElement", [node.tagName]);
   else if (node instanceof Ci.nsIDOMSVGElement)
     return stringBundle.getFormattedString("NodeLabel.svgElement", [node.tagName]);
