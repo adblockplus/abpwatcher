@@ -51,8 +51,17 @@
     <stringbundle id="stringbundle-global" src="chrome://abpwatcher/locale/global.properties"/>
   </stringbundleset>
 
+  <commandset id="watcherCommands">
+    <command id="command-copylocation" oncommand="copyLocation();"/>
+    <command id="command-copyfilters" oncommand="copyFilters();"/>
+  </commandset>
+
+  <keyset id="watcherKeys">
+    <key id="key-copylocation" modifiers="accel" key="c" command="command-copylocation"/>
+  </keyset>
+
   <popupset id="watcherPopups">
-    <tooltip id="tooltip" orient="vertical" onpopupshowing="return fillInTooltip(event)">
+    <tooltip id="tooltip" orient="vertical" onpopupshowing="return fillInTooltip(event);">
       <grid>
         <columns>
           <column/>
@@ -61,6 +70,10 @@
         <rows id="tooltip-rows"/>
       </grid>
     </tooltip>
+    <menupopup id="contextMenu" onpopupshowing="return updateContextMenu(event);">
+      <menuitem id="context-copylocation" label="&context.copyLocation.label;" oncommand="E('command-copylocation').doCommand();" key="key-copylocation"/>
+      <menuitem id="context-copyfilters" label="&context.copyFilters.label;" oncommand="E('command-copyfilters').doCommand();"/>
+    </menupopup>
   </popupset>
 
   <description id="introduction">&introduction;</description>
@@ -93,7 +106,7 @@
       <treecol id="time" label="&time.column;" hidden="true" flex="0" persist="width ordinal sortDirection hidden"/>
     </treecols>
 
-    <treechildren tooltip="tooltip"/>
+    <treechildren tooltip="tooltip" context="contextMenu"/>
   </tree>
 
   <description id="summary" _template="&summary.text;"/>
