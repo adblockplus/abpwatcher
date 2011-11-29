@@ -42,6 +42,8 @@ var processingQueue = [];
 var stringBundle;
 var notifier = null;
 
+let clipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
+
 function init()
 {
   stringBundle = document.getElementById("stringbundle-global");
@@ -62,6 +64,11 @@ function init()
   PolicyPrivate.shouldLoad = replacementShouldLoad;
   Policy.processNode = replacementProcessNode;
   setInterval(processQueue, 200);
+}
+
+function E(id)
+{
+  return document.getElementById(id);
 }
 
 function replacementShouldLoad(contentType, contentLocation, requestOrigin, node, mimeTypeGuess, extra)
@@ -276,6 +283,31 @@ function fillInTooltip(event)
   }
 
   return true;
+}
+
+function updateContextMenu(event)
+{
+  let entry = treeView.getCurrentEntry();
+  if (!entry)
+    return false;
+
+  E("context-copylocation").disabled = !entry.location;
+  E("context-copyfilters").disabled = !entry.filters.length;
+  return true;
+}
+
+function copyLocation()
+{
+  let entry = treeView.getCurrentEntry();
+  if (entry && entry.location)
+    clipboardHelper.copyString(String(entry.location));
+}
+
+function copyFilters()
+{
+  let entry = treeView.getCurrentEntry();
+  if (entry && entry.filters.length)
+    clipboardHelper.copyString(entry.filters.join("\n"));
 }
 
 function setMultilineContent(box, text) {
@@ -598,6 +630,15 @@ var treeView = {
   getEntryAt: function(x, y)
   {
     let row = this.boxObject.getRowAt(x, y);
+    if (row < 0 || row >= this.displayedItems.length)
+      return null;
+
+    return this.displayedItems[row];
+  },
+
+  getCurrentEntry: function()
+  {
+    let row = this.selection.currentIndex;
     if (row < 0 || row >= this.displayedItems.length)
       return null;
 

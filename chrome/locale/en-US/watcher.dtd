@@ -45,4 +45,7 @@
 <!ENTITY filter.column      "Filter hits">
 <!ENTITY time.column        "Processing time">
 
+<!ENTITY context.copyLocation.label   "Copy address">
+<!ENTITY context.copyFilters.label    "Copy filters">
+
 <!ENTITY summary.text       "Processing *NUMITEMS* item(s) took *TIME* seconds">
