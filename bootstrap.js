@@ -120,7 +120,8 @@ var WindowObserver =
 
   get menuItem()
   {
-    let stringBundle = Services.strings.createBundle("chrome://abpwatcher/locale/global.properties");
+    // Randomize URI to work around bug 719376
+    let stringBundle = Services.strings.createBundle("chrome://abpwatcher/locale/global.properties?" + Math.random());
     let result = [stringBundle.GetStringFromName("startwatching.label"), stringBundle.GetStringFromName("startwatching.accesskey")];
 
     delete this.menuItem;
