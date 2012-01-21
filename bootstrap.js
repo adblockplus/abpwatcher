@@ -11,7 +11,7 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-let keyPref = "extensions.abpwatcher.startwatching_key";
+let addonData = null;
 
 function install(params, reason) {}
 function uninstall(params, reason) {}
@@ -21,195 +21,71 @@ function startup(params, reason)
   if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0)
     Components.manager.addBootstrappedManifestLocation(params.installPath);
 
-  let scope = {};
-  Services.scriptloader.loadSubScript("chrome://abpwatcher/content/prefLoader.js", scope);
-  scope.loadDefaultPrefs(params.installPath);
+  addonData = params;
+  Services.obs.addObserver(RequireObserver, "abpwatcher-require", true);
 
-  try
-  {
-    // Migrate old pref
-    let legacyPref = "extensions.adblockplus.abpwatcher-startwatching_key";
-    if (Services.prefs.prefHasUserValue(legacyPref))
-    {
-      let key = Services.prefs.getCharPref(legacyPref);
-      Services.prefs.setCharPref(keyPref, key);
-      Services.prefs.clearUserPref(legacyPref);
-    }
-  }
-  catch (e)
-  {
-    Cu.reportError(e);
-  }
-
-  WindowObserver.init();
+  require("appIntegration").AppIntegration.init();
 }
 
 function shutdown(params, reason)
 {
-  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0)
-    Components.manager.removeBootstrappedManifestLocation(params.installPath);
-
-  WindowObserver.shutdown();
+  require("appIntegration").AppIntegration.shutdown();
 
   let watcherWnd = Services.wm.getMostRecentWindow("abpwatcher:watch");
   if (watcherWnd)
     watcherWnd.close();
+
+  let aboutWnd = Services.wm.getMostRecentWindow("abpwatcher:about");
+  if (aboutWnd)
+    aboutWnd.close();
+
+  Services.obs.removeObserver(RequireObserver, "abpwatcher-require");
+  addonData = null;
+  require.scopes = {__proto__: null};
+
+  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0)
+    Components.manager.removeBootstrappedManifestLocation(params.installPath);
 }
 
-var WindowObserver =
+function require(module)
 {
-  initialized: false,
-
-  init: function()
+  let scopes = require.scopes;
+  if (!(module in scopes))
   {
-    if (this.initialized)
-      return;
-    this.initialized = true;
+    if (module == "info")
+    {
+      scopes[module] = {};
+      scopes[module].exports =
+      {
+        addonID: addonData.id,
+        addonVersion: addonData.version,
+        addonRoot: addonData.resourceURI.spec,
+      };
+    }
+    else
+    {
+      scopes[module] = {require: require, unrequire: unrequire, exports: {}};
+      Services.scriptloader.loadSubScript(addonData.resourceURI.spec + module + ".js", scopes[module]);
+    }
+  }
+  return scopes[module].exports;
+}
+require.scopes = {__proto__: null};
 
-    let e = Services.ww.getWindowEnumerator();
-    while (e.hasMoreElements())
-      this.applyToWindow(e.getNext().QueryInterface(Ci.nsIDOMWindow));
+function unrequire(module)
+{
+  delete require.scopes[module];
+}
 
-    Services.ww.registerNotification(this);
-  },
-
-  shutdown: function()
-  {
-    if (!this.initialized)
-      return;
-    this.initialized = false;
-
-    let e = Services.ww.getWindowEnumerator();
-    while (e.hasMoreElements())
-      this.removeFromWindow(e.getNext().QueryInterface(Ci.nsIDOMWindow));
-
-    Services.ww.unregisterNotification(this);
-  },
-
-  applyToWindow: function(window)
-  {
-    if (!window.document.getElementById("abp-hooks"))
-      return;
-
-    window.addEventListener("popupshowing", this.popupShowingHandler, false);
-    window.addEventListener("popuphiding", this.popupHidingHandler, false);
-    window.addEventListener("keypress", this.keyPressHandler, false);
-  },
-
-  removeFromWindow: function(window)
-  {
-    if (!window.document.getElementById("abp-hooks"))
-      return;
-    window.removeEventListener("popupshowing", this.popupShowingHandler, false);
-    window.removeEventListener("popuphiding", this.popupHidingHandler, false);
-    window.removeEventListener("keypress", this.keyPressHandler, false);
-  },
-
+let RequireObserver =
+{
   observe: function(subject, topic, data)
   {
-    if (topic == "domwindowopened")
+    if (topic == "abpwatcher-require")
     {
-      let window = subject.QueryInterface(Ci.nsIDOMWindow);
-      window.addEventListener("DOMContentLoaded", function()
-      {
-        if (this.initialized)
-          this.applyToWindow(window);
-      }.bind(this), false);
+      subject.wrappedJSObject.exports = require(data);
     }
-  },
-
-  get menuItem()
-  {
-    // Randomize URI to work around bug 719376
-    let stringBundle = Services.strings.createBundle("chrome://abpwatcher/locale/global.properties?" + Math.random());
-    let result = [stringBundle.GetStringFromName("startwatching.label"), stringBundle.GetStringFromName("startwatching.accesskey")];
-
-    delete this.menuItem;
-    this.__defineGetter__("menuItem", function() result);
-    return this.menuItem;
-  },
-
-  key: undefined,
-
-  popupShowingHandler: function(event)
-  {
-    let popup = event.target;
-    if (!/^(abp-(?:toolbar|status|menuitem)-)popup$/.test(popup.id))
-      return;
-
-    let [label, accesskey] = this.menuItem;
-    let item = popup.ownerDocument.createElement("menuitem");
-    item.setAttribute("label", label);
-    item.setAttribute("accesskey", accesskey);
-    item.setAttribute("class", "abpwatcher-item");
-
-    if (typeof this.key == "undefined")
-      this.configureKey(event.currentTarget);
-    if (this.key && this.key.text)
-      item.setAttribute("acceltext", this.key.text);
-
-    item.addEventListener("command", this.popupCommandHandler, false);
-
-    let insertBefore = null;
-    for (let child = popup.firstChild; child; child = child.nextSibling)
-      if (/-options$/.test(child.id))
-        insertBefore = child;
-    popup.insertBefore(item, insertBefore);
-  },
-
-  popupHidingHandler: function(event)
-  {
-    let popup = event.target;
-    if (!/^(abp-(?:toolbar|status|menuitem)-)popup$/.test(popup.id))
-      return;
-
-    let items = popup.getElementsByClassName("abpwatcher-item");
-    if (items.length)
-      items[0].parentNode.removeChild(items[0]);
-  },
-
-  popupCommandHandler: function(event)
-  {
-    let watcherWnd = Services.wm.getMostRecentWindow("abpwatcher:watch");
-    if (watcherWnd)
-      watcherWnd.focus();
-    else
-      event.target.ownerDocument.defaultView.openDialog("chrome://abpwatcher/content/watcher.xul", "_blank", "chrome,centerscreen,resizable,dialog=no");
-  },
-
-  keyPressHandler: function(event)
-  {
-    if (typeof this.key == "undefined")
-      this.configureKey(event.currentTarget);
-
-    if (event.defaultPrevented || !this.key)
-      return;
-    if (this.key.shift != event.shiftKey || this.key.alt != event.altKey)
-      return;
-    if (this.key.meta != event.metaKey || this.key.control != event.ctrlKey)
-      return;
-
-    if (this.key.char && (!event.charCode || String.fromCharCode(event.charCode).toUpperCase() != this.key.char))
-      return;
-    else if (this.key.code && (!event.keyCode || event.keyCode != this.key.code))
-      return;
-
-    event.preventDefault();
-    this.popupCommandHandler(event);
-  },
-
-  configureKey: function(window)
-  {
-    let variants = Services.prefs.getComplexValue(keyPref, Ci.nsISupportsString).data;
-    let scope = {};
-    Services.scriptloader.loadSubScript("chrome://abpwatcher/content/keySelector.js", scope);
-    this.key = scope.selectKey(window, variants);
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsISupportsWeakReference, Ci.nsIObserver])
 };
-
-WindowObserver.popupShowingHandler = WindowObserver.popupShowingHandler.bind(WindowObserver);
-WindowObserver.popupHidingHandler = WindowObserver.popupHidingHandler.bind(WindowObserver);
-WindowObserver.popupCommandHandler = WindowObserver.popupCommandHandler.bind(WindowObserver);
-WindowObserver.keyPressHandler = WindowObserver.keyPressHandler.bind(WindowObserver);
