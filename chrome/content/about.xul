@@ -12,12 +12,12 @@
 <dialog
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
   title="&dialog.title;"
-  id="ehhAboutWindow"
-  windowtype="ehh:about"
+  id="watcherAboutWindow"
+  windowtype="abpwatcher:about"
   onload="init()"
   buttons="accept">
 
-<script type="application/x-javascript;version=1.7" src="utils.js"/>
+<script type="application/x-javascript;version=1.7" src="common.js"/>
 <script type="application/x-javascript;version=1.7" src="about.js"/>
 
 <vbox id="mainBox">
