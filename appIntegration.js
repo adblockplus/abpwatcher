@@ -31,6 +31,10 @@ let AppIntegration = exports.AppIntegration =
 
   shutdown: function()
   {
+    if (!this.initialized)
+      return;
+    this.initialized = false;
+
     Prefs.shutdown();
     WindowObserver.shutdown();
   },
