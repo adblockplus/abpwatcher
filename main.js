@@ -12,6 +12,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 let {Prefs} = require("prefs");
 let {WindowObserver} = require("windowObserver");
+let {KeySelector} = require("keySelector");
 
 let Main = exports.Main =
 {
@@ -85,8 +86,7 @@ let Main = exports.Main =
 
     if (typeof this.key == "undefined")
       this.configureKey(event.currentTarget);
-    if (this.key && this.key.text)
-      item.setAttribute("acceltext", this.key.text);
+    item.setAttribute("acceltext", KeySelector.getTextForKey(this.key));
 
     item.addEventListener("command", this.popupCommandHandler, false);
 
@@ -122,26 +122,16 @@ let Main = exports.Main =
     if (typeof this.key == "undefined")
       this.configureKey(event.currentTarget);
 
-    if (event.defaultPrevented || !this.key)
-      return;
-    if (this.key.shift != event.shiftKey || this.key.alt != event.altKey)
-      return;
-    if (this.key.meta != event.metaKey || this.key.control != event.ctrlKey)
-      return;
-
-    if (this.key.char && (!event.charCode || String.fromCharCode(event.charCode).toUpperCase() != this.key.char))
-      return;
-    else if (this.key.code && (!event.keyCode || event.keyCode != this.key.code))
-      return;
-
-    event.preventDefault();
-    this.popupCommandHandler(event);
+    if (KeySelector.matchesKey(event, this.key))
+    {
+      event.preventDefault();
+      this.popupCommandHandler(event);
+    }
   },
 
   configureKey: function(window)
   {
-    this.key = require("keySelector").selectKey(window, Prefs.startwatching_key);
-    unrequire("keySelector");   // This module is used only once, release its scope
+    this.key = new KeySelector(window).selectKey(Prefs.startwatching_key);
   }
 };
 
