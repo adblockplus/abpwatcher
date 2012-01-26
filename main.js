@@ -14,10 +14,19 @@ let key = undefined;
 
 Prefs.migrate("extensions.adblockplus.abpwatcher-startwatching_key", "startwatching_key");
 
+let knownWindowTypes =
+{
+  "navigator:browser": true,
+  "mail:3pane": true,
+  "mail:messageWindow": true,
+  __proto__: null
+};
+
 new WindowObserver({
   applyToWindow: function(window)
   {
-    if (!window.document.getElementById("abp-hooks"))
+    let type = window.document.documentElement.getAttribute("windowtype");
+    if (!(type in knownWindowTypes))
       return;
 
     window.addEventListener("popupshowing", popupShowingHandler, false);
@@ -27,7 +36,8 @@ new WindowObserver({
 
   removeFromWindow: function(window)
   {
-    if (!window.document.getElementById("abp-hooks"))
+    let type = window.document.documentElement.getAttribute("windowtype");
+    if (!(type in knownWindowTypes))
       return;
 
     window.removeEventListener("popupshowing", popupShowingHandler, false);
@@ -84,6 +94,9 @@ function popupHidingHandler(event)
 
 function popupCommandHandler(event)
 {
+  if (!("@adblockplus.org/abp/private;1" in Cc))
+    return;
+
   let watcherWnd = Services.wm.getMostRecentWindow("abpwatcher:watch");
   if (watcherWnd)
     watcherWnd.focus();
