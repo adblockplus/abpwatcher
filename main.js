@@ -62,6 +62,8 @@ function popupShowingHandler(event)
   if (!/^(abp-(?:toolbar|status|menuitem)-)popup$/.test(popup.id))
     return;
 
+  popupHiddenHandler(event);
+
   let [label, accesskey] = getMenuItem();
   let item = popup.ownerDocument.createElement("menuitem");
   item.setAttribute("label", label);
