@@ -30,7 +30,7 @@ new WindowObserver({
       return;
 
     window.addEventListener("popupshowing", popupShowingHandler, false);
-    window.addEventListener("popuphiding", popupHidingHandler, false);
+    window.addEventListener("popuphidden", popupHiddenHandler, false);
     window.addEventListener("keypress", keyPressHandler, false);
   },
 
@@ -41,7 +41,7 @@ new WindowObserver({
       return;
 
     window.removeEventListener("popupshowing", popupShowingHandler, false);
-    window.removeEventListener("popuphiding", popupHidingHandler, false);
+    window.removeEventListener("popuphidden", popupHiddenHandler, false);
     window.removeEventListener("keypress", keyPressHandler, false);
   }
 });
@@ -81,14 +81,14 @@ function popupShowingHandler(event)
   popup.insertBefore(item, insertBefore);
 }
 
-function popupHidingHandler(event)
+function popupHiddenHandler(event)
 {
   let popup = event.target;
   if (!/^(abp-(?:toolbar|status|menuitem)-)popup$/.test(popup.id))
     return;
 
   let items = popup.getElementsByClassName("abpwatcher-item");
-  if (items.length)
+  while (items.length)
     items[0].parentNode.removeChild(items[0]);
 }
 
