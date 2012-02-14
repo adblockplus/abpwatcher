@@ -4,7 +4,6 @@ basename=abpwatcher
 branchname=ABP_WATCHER
 version=1.2.2a
 author=Wladimir Palant
-about=chrome://abpwatcher/content/about.xul
 updateURL=https://adblockplus.org/update.rdf
 restartless=true
 nojar=true
