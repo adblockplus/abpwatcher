@@ -96,7 +96,7 @@ function popupHiddenHandler(event)
 
 function popupCommandHandler(event)
 {
-  if (!("@adblockplus.org/abp/private;1" in Cc))
+  if (!("@adblockplus.org/abp/public;1" in Cc))
     return;
 
   let watcherWnd = Services.wm.getMostRecentWindow("abpwatcher:watch");
