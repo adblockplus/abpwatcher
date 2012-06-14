@@ -5,8 +5,6 @@ branchname=ABP_WATCHER
 version=1.2.2a
 author=Wladimir Palant
 updateURL=https://adblockplus.org/update.rdf
-restartless=true
-nojar=true
 
 [homepage]
 default=http://adblockplus.org/en/abpwatcher
