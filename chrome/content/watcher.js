@@ -9,20 +9,41 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-let baseURL = "chrome://adblockplus-modules/content/";
-Cu.import(baseURL + "Utils.jsm");
-Cu.import(baseURL + "ContentPolicy.jsm");
-Cu.import(baseURL + "RequestNotifier.jsm");
-Cu.import(baseURL + "FilterClasses.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
-let PolicyPrivate = Cu.import(baseURL + "ContentPolicy.jsm", null).PolicyPrivate;
-var origShouldLoad = PolicyPrivate.shouldLoad;
-var origProcessNode = Policy.processNode;
+function abprequire(module)
+{
+  let result = {};
+  result.wrappedJSObject = result;
+  Services.obs.notifyObservers(result, "adblockplus-require", module);
+  if ("exports" in result)
+    return result.exports;
+  else
+    return Cu.import("chrome://adblockplus-modules/content/" + module[0].toUpperCase() + module.substr(1) + ".jsm", null);
+}
 
-var currentData = null;
-var processingQueue = [];
-var stringBundle;
-var notifier = null;
+let {Policy} = abprequire("contentPolicy");
+let {RequestNotifier} = abprequire("requestNotifier");
+let {Filter} = abprequire("filterClasses");
+
+let policyGlobal = Cu.getGlobalForObject(Policy);
+let PolicyPrivate = null;
+if ("PolicyPrivate" in policyGlobal)              // ABP 2.0.x
+  PolicyPrivate = policyGlobal.PolicyPrivate;
+else if ("PolicyImplementation" in policyGlobal)  // ABP 2.1+ with scope separation
+  PolicyPrivate = policyGlobal.PolicyImplementation;
+else if ("require" in policyGlobal)               // ABP 2.1+ without scope separation
+  PolicyPrivate = policyGlobal.require.scopes.contentPolicy.PolicyImplementation;
+else
+  window.close();
+
+let origShouldLoad = PolicyPrivate.shouldLoad;
+let origProcessNode = Policy.processNode;
+
+let currentData = null;
+let processingQueue = [];
+let stringBundle;
+let notifier = null;
 
 let clipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
 
