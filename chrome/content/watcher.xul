@@ -27,10 +27,6 @@
 
   <script type="application/x-javascript;version=1.7" src="watcher.js"/>
 
-  <stringbundleset id="stringbundles">
-    <stringbundle id="stringbundle-global" src="chrome://abpwatcher/locale/global.properties"/>
-  </stringbundleset>
-
   <commandset id="watcherCommands">
     <command id="command-copylocation" oncommand="copyLocation();"/>
     <command id="command-copyfilters" oncommand="copyFilters();"/>

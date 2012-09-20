@@ -51,15 +51,15 @@ let origProcessNode = Policy.processNode;
 
 let currentData = null;
 let processingQueue = [];
-let stringBundle;
 let notifier = null;
+
+// Randomize URI to work around bug 719376
+let stringBundle = Services.strings.createBundle("chrome://abpwatcher/locale/global.properties?" + Math.random());
 
 let clipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
 
 function init()
 {
-  stringBundle = document.getElementById("stringbundle-global");
-
   let list = document.getElementById("list");
   list.view = treeView;
   list.focus();
@@ -208,7 +208,7 @@ function processQueue()
           entry.cols.type = String(Policy.localizedDescr[entry.type]);
       } catch(e) {}
     }
-    entry.cols.result = stringBundle.getString(entry.result ? "decision.allow" : "decision.block");
+    entry.cols.result = stringBundle.GetStringFromName(entry.result ? "decision.allow" : "decision.block");
     if (typeof entry.context != "undefined")
       entry.cols.context = (entry.context ? getNodeLabel(entry.context) : String(entry.context));
     if (typeof entry.window != "undefined")
@@ -222,7 +222,7 @@ function processQueue()
 
     let additional = [];
     if (entry.internal)
-      additional.push(stringBundle.getString("additional.internalInvocation"));
+      additional.push(stringBundle.GetStringFromName("additional.internalInvocation"));
     if (typeof entry.internalType != "undefined" && entry.type != entry.internalType)
     {
       let internalType = String(entry.internalType);
@@ -231,10 +231,10 @@ function processQueue()
         if (entry.internalType in Policy.localizedDescr)
           internalType = String(Policy.localizedDescr[entry.internalType]);
       } catch(e) {}
-      additional.push(stringBundle.getFormattedString("additional.typeChanged", [internalType]));
+      additional.push(stringBundle.formatStringFromName("additional.typeChanged", [internalType], 1));
     }
     if (typeof entry.internalLocation != "undefined" && entry.location != entry.internalLocation)
-      additional.push(stringBundle.getFormattedString("additional.locationChanged", [String(entry.internalLocation)]));
+      additional.push(stringBundle.formatStringFromName("additional.locationChanged", [String(entry.internalLocation)], 1));
 
     if (additional.length > 0)
       entry.cols.additional = additional.join(", ");
@@ -248,19 +248,19 @@ function processQueue()
 function getNodeLabel(node)
 {
   if (node instanceof Ci.nsIDOMWindow)
-    return stringBundle.getFormattedString("NodeLabel.window", [node.location.href]);
+    return stringBundle.formatStringFromName("NodeLabel.window", [node.location.href], 1);
   if (node instanceof Ci.nsIDOMDocument)
-    return stringBundle.getFormattedString("NodeLabel.document", [node.URL]);
+    return stringBundle.formatStringFromName("NodeLabel.document", [node.URL], 1);
   else if (node instanceof Ci.nsIDOMXULElement)
-    return stringBundle.getFormattedString("NodeLabel.xulElement", [node.tagName]);
+    return stringBundle.formatStringFromName("NodeLabel.xulElement", [node.tagName], 1);
   else if (node instanceof Ci.nsIDOMHTMLElement)
-    return stringBundle.getFormattedString("NodeLabel.htmlElement", [node.tagName]);
+    return stringBundle.formatStringFromName("NodeLabel.htmlElement", [node.tagName], 1);
   else if (node instanceof Ci.nsIDOMSVGElement)
-    return stringBundle.getFormattedString("NodeLabel.svgElement", [node.tagName]);
+    return stringBundle.formatStringFromName("NodeLabel.svgElement", [node.tagName], 1);
   else if (node instanceof Ci.nsIDOMElement)
-    return stringBundle.getFormattedString("NodeLabel.element", [node.tagName]);
+    return stringBundle.formatStringFromName("NodeLabel.element", [node.tagName], 1);
   else
-    return stringBundle.getFormattedString("NodeLabel.unknown", [String(node)]);
+    return stringBundle.formatStringFromName("NodeLabel.unknown", [String(node)], 1);
 }
 
 function fillInTooltip(event)
