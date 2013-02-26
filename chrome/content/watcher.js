@@ -140,7 +140,7 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
   {
     Cu.reportError(e);
   }
-  
+
   let ret;
   try
   {
@@ -148,7 +148,7 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
     return ret;
   }
   finally
-  { 
+  {
     if (startTime !== null)
     {
       currentData.processingTime = (Date.now() - startTime);
@@ -234,20 +234,28 @@ function processQueue()
 
 function getNodeLabel(node)
 {
-  if (node instanceof Ci.nsIDOMWindow)
-    return stringBundle.formatStringFromName("NodeLabel.window", [node.location.href], 1);
-  if (node instanceof Ci.nsIDOMDocument)
-    return stringBundle.formatStringFromName("NodeLabel.document", [node.URL], 1);
-  else if (node instanceof Ci.nsIDOMXULElement)
-    return stringBundle.formatStringFromName("NodeLabel.xulElement", [node.tagName], 1);
-  else if (node instanceof Ci.nsIDOMHTMLElement)
-    return stringBundle.formatStringFromName("NodeLabel.htmlElement", [node.tagName], 1);
-  else if (node instanceof Ci.nsIDOMSVGElement)
-    return stringBundle.formatStringFromName("NodeLabel.svgElement", [node.tagName], 1);
-  else if (node instanceof Ci.nsIDOMElement)
-    return stringBundle.formatStringFromName("NodeLabel.element", [node.tagName], 1);
-  else
-    return stringBundle.formatStringFromName("NodeLabel.unknown", [String(node)], 1);
+  try
+  {
+    if (node instanceof Ci.nsIDOMWindow)
+      return stringBundle.formatStringFromName("NodeLabel.window", [node.location.href], 1);
+    if (node instanceof Ci.nsIDOMDocument)
+      return stringBundle.formatStringFromName("NodeLabel.document", [node.URL], 1);
+    else if (node instanceof Ci.nsIDOMXULElement)
+      return stringBundle.formatStringFromName("NodeLabel.xulElement", [node.tagName], 1);
+    else if (node instanceof Ci.nsIDOMHTMLElement)
+      return stringBundle.formatStringFromName("NodeLabel.htmlElement", [node.tagName], 1);
+    else if (node instanceof Ci.nsIDOMSVGElement)
+      return stringBundle.formatStringFromName("NodeLabel.svgElement", [node.tagName], 1);
+    else if (node instanceof Ci.nsIDOMElement)
+      return stringBundle.formatStringFromName("NodeLabel.element", [node.tagName], 1);
+    else
+      return stringBundle.formatStringFromName("NodeLabel.unknown", [String(node)], 1);
+  }
+  catch (e)
+  {
+    Cu.reportError(e);
+    return stringBundle.formatStringFromName("NodeLabel.unknown", [""], 1);
+  }
 }
 
 function fillInTooltip(event)
@@ -360,10 +368,10 @@ var treeView = {
     {
       throw Cr.NS_ERROR_NO_INTERFACE;
     }
-  
+
     return this;
   },
- 
+
   //
   // nsITreeView implementation
   //
