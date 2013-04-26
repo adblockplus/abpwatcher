@@ -9,6 +9,6 @@ updateURL=https://adblockplus.org/update.rdf
 default=http://adblockplus.org/en/abpwatcher
 
 [compat]
-firefox=14.0/22.0
-thunderbird=14.0/22.0
-seamonkey=2.11/2.19
+firefox=16.0/23.0
+thunderbird=16.0/23.0
+seamonkey=2.13/2.20
