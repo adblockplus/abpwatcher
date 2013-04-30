@@ -430,27 +430,44 @@ var treeView = {
     return (col in entry.cols ? entry.cols[col] : null);
   },
 
+  generateProperties: function(list, properties)
+  {
+    if (properties)
+    {
+      // Gecko 21 and below: we have an nsISupportsArray parameter, add atoms
+      // to that.
+      for (let i = 0; i < list.length; i++)
+        if (list[i] in this.atoms)
+          properties.AppendElement(this.atoms[list[i]]);
+      return null;
+    }
+    else
+    {
+      // Gecko 22+: no parameter, just return a string
+      return list.join(" ");
+    }
+  },
+
   getColumnProperties: function(col, properties)
   {
-    col = col.id;
-
-    if ("col-" + col in this.atoms)
-      properties.AppendElement(this.atoms["col-" + col]);
+    return this.generateProperties(["col-" + col.id], properties);
   },
+
   getRowProperties: function(row, properties)
   {
     if (row < 0 || row >= this.displayedItems.length)
-      return;
-
-    properties.AppendElement(this.atoms["selected-" + this.selection.isSelected(row)]);
+      return "";
 
     let entry = this.displayedItems[row];
-    properties.AppendElement(this.atoms["blocked-" + !entry.result]);
+    return this.generateProperties([
+        "selected-" + this.selection.isSelected(row),
+        "blocked-" + !entry.result
+      ], properties);
   },
+
   getCellProperties: function(row, col, properties)
   {
-    this.getColumnProperties(col, properties);
-    this.getRowProperties(row, properties);
+    return this.getRowProperties(row, properties) + " " + this.getColumnProperties(col, properties);
   },
 
   cycleHeader: function(col)
