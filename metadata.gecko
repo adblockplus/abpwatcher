@@ -1,7 +1,7 @@
 [general]
 id=abpwatcher@adblockplus.org
 basename=abpwatcher
-version=1.2.4a
+version=1.2.4
 author=Wladimir Palant
 updateURL=https://adblockplus.org/update.rdf
 
