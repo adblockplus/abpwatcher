@@ -6,7 +6,7 @@ author=Wladimir Palant
 updateURL=https://adblockplus.org/update.rdf
 
 [homepage]
-default=http://adblockplus.org/en/abpwatcher
+default=https://adblockplus.org/en/abpwatcher
 
 [compat]
 firefox=16.0/37.0
