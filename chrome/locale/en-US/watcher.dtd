@@ -15,6 +15,7 @@
 <!ENTITY type.column        "Type">
 <!ENTITY result.column      "Decision">
 <!ENTITY origin.column      "Request origin">
+<!ENTITY private.column     "Private">
 <!ENTITY filter.column      "Filter hits">
 <!ENTITY time.column        "Processing time">
 

@@ -111,6 +111,7 @@ function processQueue()
       type: stringify(entry.type),
       result: stringBundle.GetStringFromName(entry.result && entry.result.allow ? "decision.allow" : "decision.block"),
       origin: stringify(entry.frames && entry.frames[0] && entry.frames[0].location),
+      private: stringBundle.GetStringFromName(entry.isPrivate ? "private.yes" : "private.no"),
       filter: stringify(entry.filters && entry.filters.join(", ")),
       time: stringify(entry.processingTime)
     };
@@ -249,7 +250,7 @@ var treeView = {
     this.boxObject = boxObject;
 
     let atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
-    for each (let col in ["address", "type", "result", "origin", "filter", "time"])
+    for each (let col in ["address", "type", "result", "origin", "private", "filter", "time"])
     {
       let atomStr = "col-" + col;
       this.atoms[atomStr] = atomService.getAtom(atomStr);

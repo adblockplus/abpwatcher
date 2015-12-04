@@ -69,6 +69,8 @@
       <splitter class="tree-splitter"/>
       <treecol id="origin" label="&origin.column;" hidden="true" flex="2" persist="width ordinal sortDirection hidden"/>
       <splitter class="tree-splitter"/>
+      <treecol id="private" label="&private.column;" hidden="true" flex="0" persist="width ordinal sortDirection hidden"/>
+      <splitter class="tree-splitter"/>
       <treecol id="filter" label="&filter.column;" flex="1" persist="width ordinal sortDirection hidden"/>
       <splitter class="tree-splitter"/>
       <treecol id="time" label="&time.column;" hidden="true" flex="0" persist="width ordinal sortDirection hidden"/>
