@@ -20,23 +20,12 @@ function abprequire(module)
 }
 
 let {Policy} = abprequire("contentPolicy");
-let {RequestNotifier} = abprequire("requestNotifier");
 let {Filter} = abprequire("filterClasses");
 
-let policyGlobal = Cu.getGlobalForObject(Policy);
-let PolicyPrivate = null;
-
-if ("PolicyImplementation" in policyGlobal)  // ABP 2.1+ with scope separation
-  PolicyPrivate = policyGlobal.PolicyImplementation;
-else if ("require" in policyGlobal)               // ABP 2.1+ without scope separation
-  PolicyPrivate = policyGlobal.require.scopes.contentPolicy.PolicyImplementation;
-else
+let origShouldAllow = Policy.shouldAllow;
+if (!origShouldAllow)
   window.close();
 
-let origShouldLoad = PolicyPrivate.shouldLoad;
-let origProcessNode = Policy.processNode;
-
-let currentData = null;
 let processingQueue = [];
 let notifier = null;
 
@@ -55,13 +44,9 @@ function init()
   updateProcessingTime(treeView, "refresh");
 
   // Make sure the tree view has correct filters
-  document.getElementById("ignore-early").doCommand();
   document.getElementById("filterText").doCommand();
 
-  notifier = new RequestNotifier(null, handleFilterHit);
-
-  PolicyPrivate.shouldLoad = replacementShouldLoad;
-  Policy.processNode = replacementProcessNode;
+  Policy.shouldAllow = replacementShouldAllow;
   setInterval(processQueue, 200);
 }
 
@@ -70,81 +55,20 @@ function E(id)
   return document.getElementById(id);
 }
 
-function replacementShouldLoad(contentType, contentLocation, requestOrigin, node, mimeTypeGuess, extra)
+function replacementShouldAllow({contentType, location, frames, isPrivate})
 {
-  let startTime = null;
-  try
-  {
-    currentData = {internal: false, earlyReturn: true, filters: []};
-    startTime = Date.now();
-
-    if (contentLocation)
-      currentData.location = contentLocation.spec;
-    if (requestOrigin)
-      currentData.origin = requestOrigin.spec;
-
-    currentData.type = contentType;
-  } catch(e) {}
-
+  let startTime = Date.now();
+  let currentData = {
+    type: contentType,
+    location: location,
+    frames: frames,
+    isPrivate: isPrivate
+  };
   let ret;
+
   try
   {
-    ret = origShouldLoad.apply(this, arguments);
-    return ret;
-  }
-  finally
-  {
-    if (startTime !== null)
-      currentData.processingTime = (Date.now() - startTime);
-    currentData.result = (ret == Ci.nsIContentPolicy.ACCEPT);
-
-    processingQueue.push(currentData);
-    currentData = null;
-  }
-}
-
-function replacementProcessNode(wnd, node, contentType, location, collapse)
-{
-  let startTime = null;
-  try
-  {
-    if (currentData && !("context" in currentData))
-    {
-      currentData.earlyReturn = false;
-      currentData.context = node;
-      currentData.window = wnd;
-      currentData.internalType = contentType;
-      if (location)
-          currentData.internalLocation = location.spec;
-    }
-    else
-    {
-      // shouldLoad wasn't called - this isn't being called by content policy
-      let locationString = (location instanceof Filter ? location.text : location.spec);
-
-      currentData = {
-        internal: true,
-        earlyReturn: false,
-        filters: [],
-        location: locationString,
-        internalLocation: locationString,
-        context: node,
-        window: wnd,
-        type: contentType,
-        internalType: contentType
-      };
-      startTime = Date.now();
-    }
-  }
-  catch(e)
-  {
-    Cu.reportError(e);
-  }
-
-  let ret;
-  try
-  {
-    ret = origProcessNode.apply(this, arguments);
+    ret = origShouldAllow.apply(this, arguments);
     return ret;
   }
   finally
@@ -152,7 +76,8 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
     if (startTime !== null)
     {
       currentData.processingTime = (Date.now() - startTime);
-      currentData.result = (ret == true);
+      currentData.result = ret;
+      currentData.filters = ret.hits.filter(h => h.filter).map(h => h.filter);
 
       processingQueue.push(currentData);
       currentData = null;
@@ -162,18 +87,8 @@ function replacementProcessNode(wnd, node, contentType, location, collapse)
 
 function destroy()
 {
-  if (notifier)
-    notifier.shutdown();
-  if (origShouldLoad)
-    PolicyPrivate.shouldLoad = origShouldLoad;
-  if (origProcessNode)
-    Policy.processNode = origProcessNode;
-}
-
-function handleFilterHit(wnd, node, data)
-{
-  if (data.filter && currentData)
-    currentData.filters.push(data.filter.text);
+  if (origShouldAllow)
+    Policy.shouldAllow = origShouldAllow;
 }
 
 function processQueue()
@@ -181,81 +96,28 @@ function processQueue()
   if (!processingQueue.length)
     return;
 
+  function stringify(value)
+  {
+    if (typeof value == "undefined" || value == null)
+      return "";
+    else
+      return String(value);
+  }
+
   for each (let entry in processingQueue)
   {
-    entry.cols = {};
-    if (typeof entry.location != "undefined")
-      entry.cols.address = String(entry.location);
-    if (typeof entry.type != "undefined")
-    {
-      entry.cols.type = String(entry.type);
-      try {
-        // Nasty hack: try to get type name from ABP
-        if (entry.type in Policy.localizedDescr)
-          entry.cols.type = String(Policy.localizedDescr[entry.type]);
-      } catch(e) {}
-    }
-    entry.cols.result = stringBundle.GetStringFromName(entry.result ? "decision.allow" : "decision.block");
-    if (typeof entry.context != "undefined")
-      entry.cols.context = (entry.context ? getNodeLabel(entry.context) : String(entry.context));
-    if (typeof entry.window != "undefined")
-      entry.cols.document = (entry.window ? getNodeLabel(entry.window) : String(entry.window));
-    if (typeof entry.origin != "undefined")
-      entry.cols.origin = String(entry.origin);
-    if (entry.filters.length)
-      entry.cols.filter = entry.filters.join(", ");
-    if (typeof entry.processingTime != "undefined")
-      entry.cols.time = String(entry.processingTime);
-
-    let additional = [];
-    if (entry.internal)
-      additional.push(stringBundle.GetStringFromName("additional.internalInvocation"));
-    if (typeof entry.internalType != "undefined" && entry.type != entry.internalType)
-    {
-      let internalType = String(entry.internalType);
-      try {
-        // Nasty hack: try to get type name from ABP
-        if (entry.internalType in Policy.localizedDescr)
-          internalType = String(Policy.localizedDescr[entry.internalType]);
-      } catch(e) {}
-      additional.push(stringBundle.formatStringFromName("additional.typeChanged", [internalType], 1));
-    }
-    if (typeof entry.internalLocation != "undefined" && entry.location != entry.internalLocation)
-      additional.push(stringBundle.formatStringFromName("additional.locationChanged", [String(entry.internalLocation)], 1));
-
-    if (additional.length > 0)
-      entry.cols.additional = additional.join(", ");
-
+    entry.cols = {
+      address: stringify(entry.location),
+      type: stringify(entry.type),
+      result: stringBundle.GetStringFromName(entry.result && entry.result.allow ? "decision.allow" : "decision.block"),
+      origin: stringify(entry.frames && entry.frames[0] && entry.frames[0].location),
+      filter: stringify(entry.filters && entry.filters.join(", ")),
+      time: stringify(entry.processingTime)
+    };
     treeView.add(entry);
   }
 
   processingQueue = [];
-}
-
-function getNodeLabel(node)
-{
-  try
-  {
-    if (node instanceof Ci.nsIDOMWindow)
-      return stringBundle.formatStringFromName("NodeLabel.window", [node.location.href], 1);
-    if (node instanceof Ci.nsIDOMDocument)
-      return stringBundle.formatStringFromName("NodeLabel.document", [node.URL], 1);
-    else if (node instanceof Ci.nsIDOMXULElement)
-      return stringBundle.formatStringFromName("NodeLabel.xulElement", [node.tagName], 1);
-    else if (node instanceof Ci.nsIDOMHTMLElement)
-      return stringBundle.formatStringFromName("NodeLabel.htmlElement", [node.tagName], 1);
-    else if (node instanceof Ci.nsIDOMSVGElement)
-      return stringBundle.formatStringFromName("NodeLabel.svgElement", [node.tagName], 1);
-    else if (node instanceof Ci.nsIDOMElement)
-      return stringBundle.formatStringFromName("NodeLabel.element", [node.tagName], 1);
-    else
-      return stringBundle.formatStringFromName("NodeLabel.unknown", [String(node)], 1);
-  }
-  catch (e)
-  {
-    Cu.reportError(e);
-    return stringBundle.formatStringFromName("NodeLabel.unknown", [""], 1);
-  }
 }
 
 function fillInTooltip(event)
@@ -282,7 +144,10 @@ function fillInTooltip(event)
       row.appendChild(label);
 
       let value = document.createElement("vbox");
-      setMultilineContent(value, entry.cols[col]);
+      let data = entry.cols[col];
+      if (col == "origin")
+        data = entry.frames.map(f => f.location).join("\n");
+      setMultilineContent(value, data);
       row.appendChild(value);
 
       rows.appendChild(row);
@@ -317,14 +182,13 @@ function copyFilters()
     clipboardHelper.copyString(entry.filters.join("\n"));
 }
 
-function setMultilineContent(box, text) {
-  // The following is sufficient in Gecko 1.9 but Gecko 1.8 fails on multiline
-  // text fields in tooltips
-  // box.textContent = text.replace(/\S{80}(?=\S)/g, "$& ");
-
-  for (let i = 0; i < text.length; i += 80) {
+function setMultilineContent(box, text)
+{
+  let lines = text.split(/\n+/);
+  for (let line of lines)
+  {
     let description = document.createElement("description");
-    description.setAttribute("value", text.substr(i, 80));
+    description.textContent = line.replace(/\S{80}(?=\S)/g, "$& ");
     box.appendChild(description);
   }
 }
@@ -350,7 +214,6 @@ function updateProcessingTime(view, operation, entry)
 var treeView = {
   currentItems: [],
   displayedItems: [],
-  _ignoreEarlyReturns: false,
   _filterString: "",
   _sortColumn: null,
   _sortDirection: null,
@@ -386,7 +249,7 @@ var treeView = {
     this.boxObject = boxObject;
 
     let atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
-    for each (let col in ["address", "type", "result", "context", "document", "origin", "additional", "filter", "time"])
+    for each (let col in ["address", "type", "result", "origin", "filter", "time"])
     {
       let atomStr = "col-" + col;
       this.atoms[atomStr] = atomService.getAtom(atomStr);
@@ -461,7 +324,7 @@ var treeView = {
     let entry = this.displayedItems[row];
     return this.generateProperties([
         "selected-" + this.selection.isSelected(row),
-        "blocked-" + !entry.result
+        "blocked-" + !(entry.result && entry.result.allow)
       ], properties);
   },
 
@@ -531,16 +394,6 @@ var treeView = {
   // Custom methods
   //
 
-  get ignoreEarlyReturns()
-  {
-    return this._ignoreEarlyReturns;
-  },
-  set ignoreEarlyReturns(value)
-  {
-    this._ignoreEarlyReturns = value;
-    this.refilter();
-  },
-
   get filterString()
   {
     return this._filterString;
@@ -553,9 +406,6 @@ var treeView = {
 
   filter: function(entry)
   {
-    if (this._ignoreEarlyReturns && entry.earlyReturn)
-      return false;
-
     if (this._filterString)
     {
       let foundMatch = false;

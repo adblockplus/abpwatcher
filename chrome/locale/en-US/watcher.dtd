@@ -14,10 +14,7 @@
 <!ENTITY address.column     "Address">
 <!ENTITY type.column        "Type">
 <!ENTITY result.column      "Decision">
-<!ENTITY context.column     "Context">
-<!ENTITY document.column    "Document">
 <!ENTITY origin.column      "Request origin">
-<!ENTITY additional.column  "Additional info">
 <!ENTITY filter.column      "Filter hits">
 <!ENTITY time.column        "Processing time">
 

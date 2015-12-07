@@ -55,8 +55,6 @@
   <description id="introduction">&introduction;</description>
 
   <hbox align="center">
-    <checkbox id="ignore-early" label="&ignore-early.label;" accesskey="&ignore-early.accesskey;" persist="checked" oncommand="treeView.ignoreEarlyReturns = this.checked"/>
-    <spaced width="30"/>
     <label control="filter" value="&filter.label;" accesskey="&filter.accesskey;"/>
     <textbox flex="1" id="filterText" type="search" oncommand="treeView.filterString = this.value"/>
   </hbox>
@@ -69,13 +67,7 @@
       <splitter class="tree-splitter"/>
       <treecol id="result" label="&result.column;" flex="0" persist="width ordinal sortDirection hidden"/>
       <splitter class="tree-splitter"/>
-      <treecol id="context" label="&context.column;" flex="1" persist="width ordinal sortDirection hidden"/>
-      <splitter class="tree-splitter"/>
-      <treecol id="document" label="&document.column;" hidden="true" flex="1" persist="width ordinal sortDirection hidden"/>
-      <splitter class="tree-splitter"/>
       <treecol id="origin" label="&origin.column;" hidden="true" flex="2" persist="width ordinal sortDirection hidden"/>
-      <splitter class="tree-splitter"/>
-      <treecol id="additional" label="&additional.column;" hidden="true" flex="1" persist="width ordinal sortDirection hidden"/>
       <splitter class="tree-splitter"/>
       <treecol id="filter" label="&filter.column;" flex="1" persist="width ordinal sortDirection hidden"/>
       <splitter class="tree-splitter"/>

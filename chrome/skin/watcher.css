@@ -16,6 +16,10 @@ treechildren::-moz-tree-cell-text(blocked-true, selected-false) {
   max-width: none;
 }
 
+#tooltip vbox {
+  max-width: 500px;
+}
+
 .tooltip-label {
   font-weight: bold;
 }
