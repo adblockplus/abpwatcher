@@ -104,7 +104,7 @@ function processQueue()
       return String(value);
   }
 
-  for each (let entry in processingQueue)
+  for (let entry of processingQueue)
   {
     entry.cols = {
       address: stringify(entry.location),
@@ -201,7 +201,7 @@ function updateProcessingTime(view, operation, entry)
     totalProcessingTime += entry.processingTime;
   else {
     totalProcessingTime = 0;
-    for each (let entry in view.displayedItems)
+    for (let entry of view.displayedItems)
       totalProcessingTime += entry.processingTime;
   }
 
@@ -250,12 +250,12 @@ var treeView = {
     this.boxObject = boxObject;
 
     let atomService = Cc["@mozilla.org/atom-service;1"].getService(Ci.nsIAtomService);
-    for each (let col in ["address", "type", "result", "origin", "private", "filter", "time"])
+    for (let col of ["address", "type", "result", "origin", "private", "filter", "time"])
     {
       let atomStr = "col-" + col;
       this.atoms[atomStr] = atomService.getAtom(atomStr);
     }
-    for each (let flag in ["selected", "blocked"])
+    for (let flag of ["selected", "blocked"])
     {
       let atomStr = flag + "-true";
       this.atoms[atomStr] = atomService.getAtom(atomStr);
@@ -410,7 +410,7 @@ var treeView = {
     if (this._filterString)
     {
       let foundMatch = false;
-      for each (let label in entry.cols)
+      for (let label of entry.cols)
         if (label.toLowerCase().indexOf(this._filterString) >= 0)
           foundMatch = true;
 
@@ -532,7 +532,7 @@ var treeView = {
   },
   notifyObservers: function(operation, entry)
   {
-    for each (let observer in this.observers)
+    for (let observer of this.observers)
       observer(this, operation, entry);
   }
 };
