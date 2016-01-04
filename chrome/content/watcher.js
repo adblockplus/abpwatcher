@@ -410,8 +410,8 @@ var treeView = {
     if (this._filterString)
     {
       let foundMatch = false;
-      for (let label of entry.cols)
-        if (label.toLowerCase().indexOf(this._filterString) >= 0)
+      for (let col in entry.cols)
+        if (entry.cols[col].toLowerCase().indexOf(this._filterString) >= 0)
           foundMatch = true;
 
       if (!foundMatch)
