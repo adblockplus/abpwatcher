@@ -8,6 +8,6 @@ author=Wladimir Palant
 default=https://adblockplus.org/en/abpwatcher
 
 [compat]
-firefox=38.0/51.0
-thunderbird=38.0/51.0
-seamonkey=2.35/2.48
+firefox=38.0/*
+thunderbird=38.0/52.0
+seamonkey=2.35/*
