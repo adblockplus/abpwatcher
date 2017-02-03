@@ -9,5 +9,5 @@ default=https://adblockplus.org/en/abpwatcher
 
 [compat]
 firefox=38.0/*
-thunderbird=38.0/52.0
+thunderbird=38.0/54.0
 seamonkey=2.35/*
